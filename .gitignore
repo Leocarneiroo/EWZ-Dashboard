@@ -1,0 +1,7 @@
+.DS_Store
+
+# Generated data/report artifacts
+2026-*/
+*.csv
+*.json
+*.html
