@@ -92,6 +92,28 @@ def filter_chain_oi(chain_csv: Path, symbols: list[str], out_dir: Path) -> list[
     return outputs
 
 
+def filter_darkpool(dp_csv: Path, symbols: list[str], out_dir: Path) -> list[Path]:
+    with dp_csv.open(newline="", encoding="utf-8", errors="replace") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = reader.fieldnames or []
+        buckets = {symbol: [] for symbol in symbols}
+        for row in reader:
+            symbol = str(row.get("ticker", "")).strip().upper()
+            if symbol in buckets:
+                buckets[symbol].append(row)
+
+    outputs: list[Path] = []
+    date_label = dp_csv.stem.replace("dp-eod-report-", "")
+    for symbol, rows in buckets.items():
+        out_path = out_dir / f"dp-eod-report-{symbol}-{date_label}.csv"
+        with out_path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+        outputs.append(out_path)
+    return outputs
+
+
 def main() -> int:
     args = parse_args()
     date_dir = args.date_dir.expanduser().resolve()
@@ -113,6 +135,8 @@ def main() -> int:
         raise FileNotFoundError("bot-eod-report ZIP not found in date dir.")
     if "chain-oi-changes" not in extracted:
         raise FileNotFoundError("chain-oi-changes ZIP not found in date dir.")
+    if "dp-eod-report" not in extracted:
+        raise FileNotFoundError("dp-eod-report ZIP not found in date dir.")
 
     all_outputs: list[Path] = []
     for symbol in symbols:
@@ -120,6 +144,7 @@ def main() -> int:
             build_flow_exports(extracted["bot-eod-report"], symbol, processed_dir, args.timezone)
         )
     all_outputs.extend(filter_chain_oi(extracted["chain-oi-changes"], symbols, processed_dir))
+    all_outputs.extend(filter_darkpool(extracted["dp-eod-report"], symbols, processed_dir))
 
     print("Generated outputs:")
     for path in all_outputs:

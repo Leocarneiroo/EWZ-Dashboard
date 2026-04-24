@@ -37,6 +37,11 @@ def parse_args() -> argparse.Namespace:
         help="Optional chain OI changes CSV or ZIP file.",
     )
     parser.add_argument(
+        "--dp-file",
+        default=None,
+        help="Optional darkpool DP EOD CSV or ZIP file.",
+    )
+    parser.add_argument(
         "--output",
         default=f"{DEFAULT_TICKER}_delta_volume_dashboard.html",
         help="Output HTML file path.",
@@ -212,6 +217,97 @@ def summarize_oi_change(oi_path: Path | None, ticker: str) -> dict[str, object] 
     }
 
 
+def summarize_darkpool(dp_path: Path | None, ticker: str) -> dict[str, object] | None:
+    if dp_path is None:
+        return None
+
+    rows = load_csv_from_path(dp_path)
+    symbol_rows = [row for row in rows if str(row.get("ticker", "")).strip().upper() == ticker.upper()]
+    if not symbol_rows:
+        return None
+
+    frame = pd.DataFrame(symbol_rows)
+    for column in [
+        "size",
+        "volume",
+        "premium",
+        "price",
+        "nbbo_ask",
+        "nbbo_bid",
+        "nbbo_ask_quantity",
+        "nbbo_bid_quantity",
+    ]:
+        frame[column] = pd.to_numeric(frame.get(column), errors="coerce").fillna(0.0)
+
+    if "canceled" in frame.columns:
+        frame = frame.loc[~parse_canceled(frame["canceled"])].copy()
+
+    frame["off_mid"] = 0.0
+    spread = frame["nbbo_ask"] - frame["nbbo_bid"]
+    valid_spread = spread > 0
+    mid = (frame["nbbo_ask"] + frame["nbbo_bid"]) / 2.0
+    frame.loc[valid_spread, "off_mid"] = frame.loc[valid_spread, "price"] - mid.loc[valid_spread]
+
+    above_ask = int((frame["price"] > frame["nbbo_ask"]).sum())
+    below_bid = int((frame["price"] < frame["nbbo_bid"]).sum())
+    inside_nbbo = int(((frame["price"] >= frame["nbbo_bid"]) & (frame["price"] <= frame["nbbo_ask"])).sum())
+    executed_regular = int((frame.get("trade_settlement", "").astype(str).str.lower() == "regular").sum())
+    extended_hours = int(frame.get("ext_hour_sold_codes", "").astype(str).str.contains("extended", case=False, na=False).sum())
+
+    top_rows = (
+        frame.sort_values(["premium", "size"], ascending=False)
+        .head(5)[["executed_at", "price", "size", "premium", "nbbo_bid", "nbbo_ask"]]
+        .to_dict(orient="records")
+    )
+
+    return {
+        "rows": int(len(frame)),
+        "premium_total": float(frame["premium"].sum()),
+        "size_total": float(frame["size"].sum()),
+        "volume_total": float(frame["volume"].sum()),
+        "avg_price": float(frame["price"].mean()) if len(frame) else 0.0,
+        "avg_off_mid": float(frame["off_mid"].mean()) if len(frame) else 0.0,
+        "above_ask": above_ask,
+        "below_bid": below_bid,
+        "inside_nbbo": inside_nbbo,
+        "regular_settlement": executed_regular,
+        "extended_hours": extended_hours,
+        "top_rows": top_rows,
+    }
+
+
+def build_bot_dp_comparison(flow_data: dict[str, float | int | str], dp_summary: dict[str, object] | None) -> dict[str, object] | None:
+    if not dp_summary:
+        return None
+
+    bot_trades = int(flow_data["n_contracts"])
+    dp_trades = int(dp_summary["rows"])
+    bot_premium = float(flow_data["premium_total"])
+    dp_premium = float(dp_summary["premium_total"])
+    bot_vs_dp_premium = bot_premium / dp_premium if dp_premium else None
+
+    similarities = [
+        "Mesmo ativo e mesma data da sessao.",
+        "Ambos capturam atividade grande/institucional.",
+        "Os dois ajudam a confirmar onde houve concentracao de capital.",
+    ]
+    differences = [
+        "BOT = fluxo de opcoes; DP = blocos de acoes em dark pool.",
+        "BOT traz lado/estrutura de calls e puts; DP nao traz cadeia de opcoes.",
+        "Premium BOT e premium DP nao sao metricas identicas, entao a leitura deve ser paralela e nao somada.",
+    ]
+
+    return {
+        "bot_trades": bot_trades,
+        "dp_trades": dp_trades,
+        "bot_premium": bot_premium,
+        "dp_premium": dp_premium,
+        "premium_ratio": bot_vs_dp_premium,
+        "similarities": similarities,
+        "differences": differences,
+    }
+
+
 def explain_option_symbol(option_symbol: str) -> str:
     text = option_symbol.strip().upper()
     if not text:
@@ -271,8 +367,29 @@ def render_oi_rows(rows: list[dict[str, object]], mode: str) -> str:
     return "".join(cells) if cells else '<div class="oi-empty">Sem contratos relevantes.</div>'
 
 
+def render_dp_rows(rows: list[dict[str, object]]) -> str:
+    if not rows:
+        return '<div class="oi-empty">Sem prints relevantes.</div>'
+
+    cells = []
+    for row in rows:
+        cells.append(
+            f"""
+            <div class="oi-row">
+              <div class="oi-contract">{row["executed_at"]}</div>
+              <div class="oi-meta">Price: {float(row["price"]):.2f} · Size: {float(row["size"]):,.0f} · Premium: {float(row["premium"]):,.0f} · NBBO {float(row["nbbo_bid"]):.2f}/{float(row["nbbo_ask"]):.2f}</div>
+            </div>
+            """
+        )
+    return "".join(cells)
+
+
 def generate_html(
-    ticker: str, data: dict[str, float | int | str], oi_summary: dict[str, object] | None
+    ticker: str,
+    data: dict[str, float | int | str],
+    oi_summary: dict[str, object] | None,
+    dp_summary: dict[str, object] | None,
+    bot_dp_comparison: dict[str, object] | None,
 ) -> str:
     imbalance = float(data["imbalance"])
     pct_bull = float(data["pct_bullish"])
@@ -339,6 +456,51 @@ def generate_html(
             <div class="oi-list">{render_oi_rows(oi_summary["top_close"], "close")}</div>
           </div>
         </div>
+      </div>
+    </section>
+"""
+
+    dp_panel = ""
+    if dp_summary and bot_dp_comparison:
+        premium_ratio = bot_dp_comparison["premium_ratio"]
+        ratio_text = f"{premium_ratio:.2f}x" if premium_ratio is not None else "N/A"
+        similarities_html = "".join(
+            f'<div class="compare-item bull">{item}</div>' for item in bot_dp_comparison["similarities"]
+        )
+        differences_html = "".join(
+            f'<div class="compare-item bear">{item}</div>' for item in bot_dp_comparison["differences"]
+        )
+        dp_panel = f"""
+    <section class="panel">
+      <div class="panel-head">
+        <div class="small">DP-EOD | dark pool separado do BOT</div>
+        <div class="small">Prints monitorados: {int(dp_summary["rows"]):,}</div>
+      </div>
+      <section class="grid">
+        <div class="kpi"><div class="k">DP Premium</div><div class="v">{float(dp_summary["premium_total"]):,.0f}</div></div>
+        <div class="kpi"><div class="k">DP Size</div><div class="v">{float(dp_summary["size_total"]):,.0f}</div></div>
+        <div class="kpi"><div class="k">DP Avg Price</div><div class="v">{float(dp_summary["avg_price"]):.2f}</div></div>
+        <div class="kpi"><div class="k">Inside NBBO</div><div class="v">{int(dp_summary["inside_nbbo"]):,}</div></div>
+      </section>
+      <div class="compare-grid">
+        <div class="compare-box">
+          <div class="small">BOT x DP | semelhancas</div>
+          {similarities_html}
+        </div>
+        <div class="compare-box">
+          <div class="small">BOT x DP | diferencas</div>
+          {differences_html}
+        </div>
+      </div>
+      <section class="grid compare-kpis">
+        <div class="kpi"><div class="k">BOT Trades</div><div class="v">{int(bot_dp_comparison["bot_trades"]):,}</div></div>
+        <div class="kpi"><div class="k">DP Prints</div><div class="v">{int(bot_dp_comparison["dp_trades"]):,}</div></div>
+        <div class="kpi"><div class="k">BOT Premium</div><div class="v">{float(bot_dp_comparison["bot_premium"]):,.0f}</div></div>
+        <div class="kpi"><div class="k">BOT/DP Premium</div><div class="v">{ratio_text}</div></div>
+      </section>
+      <div style="margin-top:12px">
+        <div class="small">Top prints DP</div>
+        <div class="oi-list">{render_dp_rows(dp_summary["top_rows"])}</div>
       </div>
     </section>
 """
@@ -513,12 +675,32 @@ def generate_html(
       color: var(--muted);
       font-size: 12px;
     }}
+    .compare-grid {{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }}
+    .compare-box {{
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      background: rgba(255,255,255,.02);
+      display: grid;
+      gap: 8px;
+    }}
+    .compare-item {{
+      font-size: 13px;
+      line-height: 1.35;
+      color: var(--text);
+    }}
     @media (max-width: 860px) {{
       .grid {{
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }}
       .chart-grid,
-      .oi-chart-grid {{
+      .oi-chart-grid,
+      .compare-grid {{
         grid-template-columns: 1fr;
       }}
       .chart-wrap {{
@@ -556,6 +738,7 @@ def generate_html(
       </div>
     </section>
 {oi_panel}
+{dp_panel}
   </main>
 
   <script>
@@ -657,10 +840,15 @@ def main() -> int:
     oi_path = Path(args.oi_change_file) if args.oi_change_file else None
     if oi_path and not oi_path.exists():
         raise FileNotFoundError(f"OI change file not found: {oi_path}")
+    dp_path = Path(args.dp_file) if args.dp_file else None
+    if dp_path and not dp_path.exists():
+        raise FileNotFoundError(f"DP file not found: {dp_path}")
 
     data = calculate_from_flow(flow_paths)
     oi_summary = summarize_oi_change(oi_path, args.ticker)
-    html = generate_html(args.ticker, data, oi_summary)
+    dp_summary = summarize_darkpool(dp_path, args.ticker)
+    bot_dp_comparison = build_bot_dp_comparison(data, dp_summary)
+    html = generate_html(args.ticker, data, oi_summary, dp_summary, bot_dp_comparison)
 
     output_path = Path(args.output)
     output_path.write_text(html, encoding="utf-8")
@@ -677,6 +865,9 @@ def main() -> int:
         print(f"OI Opened: {float(oi_summary['opening_contracts']):,.0f}")
         print(f"OI Closed: {float(oi_summary['closing_contracts']):,.0f}")
         print(f"OI Net: {net_sign}{net_contracts:,.0f}")
+    if dp_summary:
+        print(f"DP Prints: {int(dp_summary['rows']):,}")
+        print(f"DP Premium: {float(dp_summary['premium_total']):,.0f}")
     print(f"HTML generated: {output_path.resolve()}")
     return 0
 

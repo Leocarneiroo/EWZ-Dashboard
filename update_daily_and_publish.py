@@ -56,6 +56,7 @@ def main() -> int:
         ask_path = processed_dir / f"flow_true_{date_label}_50_ETF_{ticker}_ask_side_FULL_{date_label}.csv"
         bid_path = processed_dir / f"flow_true_{date_label}_50_ETF_{ticker}_bid_side_FULL_{date_label}.csv"
         oi_path = processed_dir / f"chain-oi-changes-{ticker}-{date_label}.csv"
+        dp_path = processed_dir / f"dp-eod-report-{ticker}-{date_label}.csv"
         output_html = processed_dir / f"{ticker}_delta_volume_dashboard_{date_label}.html"
         output_html_by_symbol[ticker] = output_html
 
@@ -70,6 +71,8 @@ def main() -> int:
                 str(bid_path),
                 "--oi-change-file",
                 str(oi_path),
+                "--dp-file",
+                str(dp_path),
                 "--output",
                 str(output_html),
             ],

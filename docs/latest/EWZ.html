@@ -168,12 +168,32 @@
       color: var(--muted);
       font-size: 12px;
     }
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .compare-box {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      background: rgba(255,255,255,.02);
+      display: grid;
+      gap: 8px;
+    }
+    .compare-item {
+      font-size: 13px;
+      line-height: 1.35;
+      color: var(--text);
+    }
     @media (max-width: 860px) {
       .grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
       .chart-grid,
-      .oi-chart-grid {
+      .oi-chart-grid,
+      .compare-grid {
         grid-template-columns: 1fr;
       }
       .chart-wrap {
@@ -287,6 +307,65 @@
             </div>
           </div>
         </div>
+      </div>
+    </section>
+
+
+    <section class="panel">
+      <div class="panel-head">
+        <div class="small">DP-EOD | dark pool separado do BOT</div>
+        <div class="small">Prints monitorados: 394</div>
+      </div>
+      <section class="grid">
+        <div class="kpi"><div class="k">DP Premium</div><div class="v">118,542,965</div></div>
+        <div class="kpi"><div class="k">DP Size</div><div class="v">2,944,913</div></div>
+        <div class="kpi"><div class="k">DP Avg Price</div><div class="v">40.28</div></div>
+        <div class="kpi"><div class="k">Inside NBBO</div><div class="v">335</div></div>
+      </section>
+      <div class="compare-grid">
+        <div class="compare-box">
+          <div class="small">BOT x DP | semelhancas</div>
+          <div class="compare-item bull">Mesmo ativo e mesma data da sessao.</div><div class="compare-item bull">Ambos capturam atividade grande/institucional.</div><div class="compare-item bull">Os dois ajudam a confirmar onde houve concentracao de capital.</div>
+        </div>
+        <div class="compare-box">
+          <div class="small">BOT x DP | diferencas</div>
+          <div class="compare-item bear">BOT = fluxo de opcoes; DP = blocos de acoes em dark pool.</div><div class="compare-item bear">BOT traz lado/estrutura de calls e puts; DP nao traz cadeia de opcoes.</div><div class="compare-item bear">Premium BOT e premium DP nao sao metricas identicas, entao a leitura deve ser paralela e nao somada.</div>
+        </div>
+      </div>
+      <section class="grid compare-kpis">
+        <div class="kpi"><div class="k">BOT Trades</div><div class="v">2,837</div></div>
+        <div class="kpi"><div class="k">DP Prints</div><div class="v">394</div></div>
+        <div class="kpi"><div class="k">BOT Premium</div><div class="v">5,091,421</div></div>
+        <div class="kpi"><div class="k">BOT/DP Premium</div><div class="v">0.04x</div></div>
+      </section>
+      <div style="margin-top:12px">
+        <div class="small">Top prints DP</div>
+        <div class="oi-list">
+            <div class="oi-row">
+              <div class="oi-contract">2026-04-23 19:09:32.122+00</div>
+              <div class="oi-meta">Price: 40.19 · Size: 461,400 · Premium: 18,543,666 · NBBO 40.20/40.21</div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">2026-04-23 18:10:24.021+00</div>
+              <div class="oi-meta">Price: 40.33 · Size: 220,376 · Premium: 8,887,764 · NBBO 40.33/40.34</div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">2026-04-23 17:54:17.24+00</div>
+              <div class="oi-meta">Price: 40.15 · Size: 124,418 · Premium: 4,995,383 · NBBO 40.19/40.20</div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">2026-04-23 20:00:30.581+00</div>
+              <div class="oi-meta">Price: 40.09 · Size: 68,065 · Premium: 2,728,726 · NBBO 40.02/40.14</div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">2026-04-23 19:32:26.483+00</div>
+              <div class="oi-meta">Price: 40.05 · Size: 47,000 · Premium: 1,882,350 · NBBO 40.05/40.06</div>
+            </div>
+            </div>
       </div>
     </section>
 
