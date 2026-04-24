@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SPY Delta Volume Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #090b0c;
+      --bg-2: #111719;
+      --line: #253035;
+      --text: #e6ece8;
+      --muted: #8a9890;
+      --bull: #1f9e78;
+      --bear: #d05e34;
+      --accent: #d8c37a;
+      --neutral: #93a29a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 0% 0%, #1d2a2f 0%, transparent 55%),
+        radial-gradient(900px 400px at 100% 100%, #2b1c1a 0%, transparent 58%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    .layout {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+      display: grid;
+      gap: 16px;
+    }
+    .hero {
+      display: grid;
+      gap: 8px;
+      border: 1px solid var(--line);
+      background: linear-gradient(160deg, rgba(17,23,25,.92), rgba(9,11,12,.95));
+      padding: 18px;
+      border-radius: 10px;
+    }
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .ticker {
+      font-size: 28px;
+      line-height: 1;
+      letter-spacing: 0;
+      font-weight: 700;
+    }
+    .stamp {
+      font-family: "IBM Plex Mono", monospace;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .imbalance {
+      font-size: clamp(32px, 7vw, 58px);
+      font-weight: 700;
+      color: #d05e34;
+      line-height: 1;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .status {
+      color: #d05e34;
+      font-weight: 700;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .kpi {
+      border: 1px solid var(--line);
+      background: var(--bg-2);
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 84px;
+    }
+    .k {
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    .v {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      background: var(--bg-2);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 12px;
+      align-items: stretch;
+    }
+    .oi-chart-grid {
+      grid-template-columns: 1fr 1fr;
+      margin-top: 12px;
+    }
+    .chart-wrap {
+      height: 260px;
+    }
+    .small {
+      font-family: "IBM Plex Mono", monospace;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .bull { color: var(--bull); }
+    .bear { color: var(--bear); }
+    .neutral { color: var(--neutral); }
+    .oi-lists {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .oi-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .oi-row {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: rgba(255,255,255,.02);
+    }
+    .oi-contract {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12px;
+      color: var(--text);
+    }
+    .oi-meta, .oi-empty {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    @media (max-width: 860px) {
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .chart-grid,
+      .oi-chart-grid {
+        grid-template-columns: 1fr;
+      }
+      .chart-wrap {
+        height: 230px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <section class="hero">
+      <div class="hero-top">
+        <div class="ticker">SPY Delta Volume</div>
+        <div class="stamp">23/04/2026</div>
+      </div>
+      <div class="imbalance">-611,136</div>
+      <div class="sub">Order Flow Sentiment: <span class="status">49.9% Bearish</span> · Sem MID/NO_SIDE</div>
+    </section>
+
+    <section class="grid">
+      <div class="kpi"><div class="k">Bullish Delta Vol</div><div class="v" style="color:var(--bull)">196,143,136</div></div>
+      <div class="kpi"><div class="k">Bearish Delta Vol</div><div class="v" style="color:var(--bear)">196,754,272</div></div>
+      <div class="kpi"><div class="k">Trades</div><div class="v">1,374,863</div></div>
+      <div class="kpi"><div class="k">Premium Total</div><div class="v">2,358,285,428</div></div>
+    </section>
+
+    <section class="panel chart-grid">
+      <div>
+        <div class="small">Bullish vs Bearish (%)</div>
+        <div class="chart-wrap"><canvas id="sentimentChart"></canvas></div>
+      </div>
+      <div>
+        <div class="small">CALLS/PUTS bi-color flow</div>
+        <div class="chart-wrap"><canvas id="structureChart"></canvas></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div class="small">OI-CHANGE | posições abertas x fechadas</div>
+        <div class="small">Contratos monitorados: 4,490</div>
+      </div>
+      <section class="grid oi-grid">
+        <div class="kpi"><div class="k">Aberturas</div><div class="v">954,911</div></div>
+        <div class="kpi"><div class="k">Fechamentos</div><div class="v">174,885</div></div>
+        <div class="kpi"><div class="k">Saldo OI</div><div class="v bull">+780,026</div></div>
+        <div class="kpi"><div class="k">Bull vs Bear Open</div><div class="v"><span class="bull">519,060</span> / <span class="bear">434,388</span></div></div>
+      </section>
+      <div class="chart-grid oi-chart-grid">
+        <div>
+          <div class="small">Abertura/fechamento por bias</div>
+          <div class="chart-wrap"><canvas id="oiChart"></canvas></div>
+        </div>
+        <div class="oi-lists">
+          <div>
+            <div class="small">Top aberturas</div>
+            <div class="oi-list">
+            <div class="oi-row">
+              <div class="oi-contract">SPY260430P00699000</div>
+              <div class="oi-meta">Abertos: 69,952 · Bias: <span class="bull">bullish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">SPY260430P00685000</div>
+              <div class="oi-meta">Abertos: 65,886 · Bias: <span class="bear">bearish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">SPY260424P00645000</div>
+              <div class="oi-meta">Abertos: 49,082 · Bias: <span class="bear">bearish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">SPY260424P00646000</div>
+              <div class="oi-meta">Abertos: 48,355 · Bias: <span class="bull">bullish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">SPY260423P00698000</div>
+              <div class="oi-meta">Abertos: 18,512 · Bias: <span class="bull">bullish</span></div>
+            </div>
+            </div>
+          </div>
+          <div>
+            <div class="small">Top fechamentos</div>
+            <div class="oi-list">
+            <div class="oi-row">
+              <div class="oi-contract">SPY260424P00683000</div>
+              <div class="oi-meta">Fechados: 47,719 · Bias: <span class="bull">bullish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">SPY260424P00701000</div>
+              <div class="oi-meta">Fechados: 46,394 · Bias: <span class="bear">bearish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">SPY260717P00680000</div>
+              <div class="oi-meta">Fechados: 2,624 · Bias: <span class="bull">bullish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">SPY260424P00702000</div>
+              <div class="oi-meta">Fechados: 2,560 · Bias: <span class="bear">bearish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">SPY260515C00705000</div>
+              <div class="oi-meta">Fechados: 2,138 · Bias: <span class="bear">bearish</span></div>
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const payload = {"donut": [49.9, 50.1], "columnsGreen": [88082088.41472633, 108061047.71280837], "columnsRed": [86226368.92844483, 110527902.82373908], "oiOpen": [519060.0, 434388.0, 1463.0], "oiClose": [83757.0, 90587.0, 541.0]};
+    new Chart(document.getElementById("sentimentChart"), {
+      type: "doughnut",
+      data: {
+        labels: ["Bullish", "Bearish"],
+        datasets: [{
+          data: payload.donut,
+          backgroundColor: ["#1f9e78", "#d05e34"],
+          borderColor: ["#146e54", "#8f3f23"],
+          borderWidth: 1.5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "62%",
+        plugins: {
+          legend: { labels: { color: "#dce4df" } }
+        }
+      }
+    });
+
+    new Chart(document.getElementById("structureChart"), {
+      type: "bar",
+      data: {
+        labels: ["CALLS", "PUTS"],
+        datasets: [{
+          label: "Green side",
+          data: payload.columnsGreen,
+          backgroundColor: ["#1f9e78", "#1f9e78"],
+          borderColor: ["#146e54", "#146e54"],
+          borderWidth: 1,
+          stack: "flow"
+        },
+        {
+          label: "Red side",
+          data: payload.columnsRed,
+          backgroundColor: ["#d05e34", "#d05e34"],
+          borderColor: ["#8f3f23", "#8f3f23"],
+          borderWidth: 1,
+          stack: "flow"
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: "#dce4df" } } },
+        scales: {
+          x: { stacked: true, ticks: { color: "#dce4df" }, grid: { color: "rgba(255,255,255,.06)" } },
+          y: { stacked: true, ticks: { color: "#dce4df" }, grid: { color: "rgba(255,255,255,.06)" } }
+        }
+      }
+    });
+
+    if (document.getElementById("oiChart")) {
+      new Chart(document.getElementById("oiChart"), {
+        type: "bar",
+        data: {
+          labels: ["Bullish", "Bearish", "Neutral"],
+          datasets: [{
+            label: "Aberturas",
+            data: payload.oiOpen,
+            backgroundColor: ["#1f9e78", "#d05e34", "#93a29a"],
+            borderWidth: 0
+          },
+          {
+            label: "Fechamentos",
+            data: payload.oiClose,
+            backgroundColor: ["#146e54", "#8f3f23", "#55635c"],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: "#dce4df" } } },
+          scales: {
+            x: { ticks: { color: "#dce4df" }, grid: { color: "rgba(255,255,255,.06)" } },
+            y: { ticks: { color: "#dce4df" }, grid: { color: "rgba(255,255,255,.06)" } }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

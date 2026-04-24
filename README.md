@@ -1,6 +1,6 @@
 # EWZ Dashboard
 
-Dashboard diário de fluxo/opções com painel de OI-CHANGE e publicação no GitHub Pages.
+Dashboard diário de fluxo/opções (EWZ + SPY) com painel de OI-CHANGE e publicação no GitHub Pages.
 
 ## Atualização diária
 
@@ -14,8 +14,8 @@ Esse comando:
 
 1. Processa os ZIPs do dia (`bot`, `dp`, `chain-oi-changes`).
 2. Gera os CSVs por símbolo (`EWZ` e `SPY`) em `YYYY-MM-DD/processed`.
-3. Gera o dashboard EWZ com painel de OI-CHANGE.
-4. Publica a versão mais nova em `docs/index.html` e salva histórico em `docs/history`.
+3. Gera dashboards de `EWZ` e `SPY` com painel de OI-CHANGE.
+4. Publica um `docs/index.html` com seletor de símbolo (`EWZ/SPY`), versões latest em `docs/latest` e histórico em `docs/history`.
 
 Depois faça push:
 

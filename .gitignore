@@ -10,5 +10,7 @@
 !docs/
 !docs/index.html
 !docs/latest.json
+!docs/latest/
+!docs/latest/*.html
 !docs/history/
 !docs/history/*.html

@@ -11,7 +11,7 @@ from pathlib import Path
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Process daily files, generate EWZ dashboard, and publish docs/index.html."
+        description="Process daily files, generate dashboards, and publish docs/index.html."
     )
     parser.add_argument(
         "--date-dir",
@@ -19,11 +19,7 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help="Directory containing daily ZIP files (ex: 2026-04-23).",
     )
-    parser.add_argument(
-        "--ticker",
-        default="EWZ",
-        help="Ticker to generate dashboard for.",
-    )
+    parser.add_argument("--symbols", nargs="+", default=["EWZ", "SPY"], help="Tickers to publish.")
     parser.add_argument(
         "--site-dir",
         default=Path("docs"),
@@ -44,7 +40,7 @@ def main() -> int:
     repo_dir = Path(__file__).resolve().parent
     date_dir = args.date_dir.expanduser().resolve()
     date_label = date_dir.name
-    ticker = args.ticker.upper().strip()
+    symbols = [symbol.upper().strip() for symbol in args.symbols]
     processed_dir = date_dir / "processed"
 
     if not date_dir.exists():
@@ -55,46 +51,48 @@ def main() -> int:
         cwd=repo_dir,
     )
 
-    ask_path = processed_dir / f"flow_true_{date_label}_50_ETF_{ticker}_ask_side_FULL_{date_label}.csv"
-    bid_path = processed_dir / f"flow_true_{date_label}_50_ETF_{ticker}_bid_side_FULL_{date_label}.csv"
-    oi_path = processed_dir / f"chain-oi-changes-{ticker}-{date_label}.csv"
-    output_html = processed_dir / f"{ticker}_delta_volume_dashboard_{date_label}.html"
+    output_html_by_symbol: dict[str, Path] = {}
+    for ticker in symbols:
+        ask_path = processed_dir / f"flow_true_{date_label}_50_ETF_{ticker}_ask_side_FULL_{date_label}.csv"
+        bid_path = processed_dir / f"flow_true_{date_label}_50_ETF_{ticker}_bid_side_FULL_{date_label}.csv"
+        oi_path = processed_dir / f"chain-oi-changes-{ticker}-{date_label}.csv"
+        output_html = processed_dir / f"{ticker}_delta_volume_dashboard_{date_label}.html"
+        output_html_by_symbol[ticker] = output_html
 
-    run(
-        [
-            sys.executable,
-            "ewz_delta_dashboard.py",
-            "--ticker",
-            ticker,
-            "--flow-files",
-            str(ask_path),
-            str(bid_path),
-            "--oi-change-file",
-            str(oi_path),
-            "--output",
-            str(output_html),
-        ],
-        cwd=repo_dir,
-    )
+        run(
+            [
+                sys.executable,
+                "ewz_delta_dashboard.py",
+                "--ticker",
+                ticker,
+                "--flow-files",
+                str(ask_path),
+                str(bid_path),
+                "--oi-change-file",
+                str(oi_path),
+                "--output",
+                str(output_html),
+            ],
+            cwd=repo_dir,
+        )
 
-    run(
-        [
-            sys.executable,
-            "publish_github_pages.py",
-            "--dashboard-html",
-            str(output_html),
-            "--date",
-            date_label,
-            "--site-dir",
-            str(args.site_dir),
-        ],
-        cwd=repo_dir,
-    )
+    publish_cmd = [
+        sys.executable,
+        "publish_github_pages.py",
+        "--date",
+        date_label,
+        "--site-dir",
+        str(args.site_dir),
+    ]
+    for ticker in sorted(output_html_by_symbol.keys()):
+        publish_cmd.extend(["--dashboard", f"{ticker}={output_html_by_symbol[ticker]}"])
+    run(publish_cmd, cwd=repo_dir)
 
     print()
     print("Daily pipeline completed.")
     print(f"Date: {date_label}")
-    print(f"Dashboard: {output_html}")
+    for ticker in sorted(output_html_by_symbol.keys()):
+        print(f"{ticker} dashboard: {output_html_by_symbol[ticker]}")
     print("GitHub Pages source updated in docs/")
     return 0
 

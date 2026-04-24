@@ -1,5 +1,16 @@
 {
   "date": "2026-04-23",
-  "latest_dashboard": "index.html",
-  "history_file": "history/EWZ_delta_volume_dashboard_2026-04-23.html"
+  "default_symbol": "EWZ",
+  "symbols": [
+    "EWZ",
+    "SPY"
+  ],
+  "latest_dashboards": {
+    "EWZ": "latest/EWZ.html",
+    "SPY": "latest/SPY.html"
+  },
+  "history_files": {
+    "EWZ": "history/EWZ_delta_volume_dashboard_2026-04-23.html",
+    "SPY": "history/SPY_delta_volume_dashboard_2026-04-23.html"
+  }
 }
