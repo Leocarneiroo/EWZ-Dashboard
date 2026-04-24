@@ -5,3 +5,10 @@
 *.csv
 *.json
 *.html
+
+# GitHub Pages published outputs
+!docs/
+!docs/index.html
+!docs/latest.json
+!docs/history/
+!docs/history/*.html

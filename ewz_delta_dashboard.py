@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 from datetime import date
 from pathlib import Path
+from zipfile import ZipFile
 
 import pandas as pd
 
@@ -28,6 +30,11 @@ def parse_args() -> argparse.Namespace:
         nargs="*",
         default=DEFAULT_FLOW_FILES,
         help="One or more flow CSV files (ASK/BID).",
+    )
+    parser.add_argument(
+        "--oi-change-file",
+        default=None,
+        help="Optional chain OI changes CSV or ZIP file.",
     )
     parser.add_argument(
         "--output",
@@ -77,9 +84,6 @@ def calculate_from_flow(flow_paths: list[Path]) -> dict[str, float | int | str]:
     call_mask = option_kind == "C"
     put_mask = option_kind == "P"
 
-    # Two bi-color columns:
-    # CALLS = ASK (green) + BID (red)
-    # PUTS  = ASK (red) + BID (green)
     calls_ask_green = float(flow.loc[ask_mask & call_mask, "delta_volume"].clip(lower=0).sum())
     calls_bid_red = float(flow.loc[bid_mask & call_mask, "delta_volume"].abs().sum())
     puts_ask_red = float(flow.loc[ask_mask & put_mask, "delta_volume"].abs().sum())
@@ -107,7 +111,136 @@ def calculate_from_flow(flow_paths: list[Path]) -> dict[str, float | int | str]:
     }
 
 
-def generate_html(ticker: str, data: dict[str, float | int | str]) -> str:
+def load_csv_from_path(path: Path) -> list[dict[str, str]]:
+    if path.suffix.lower() == ".zip":
+        with ZipFile(path) as archive:
+            names = [name for name in archive.namelist() if name.lower().endswith(".csv")]
+            if not names:
+                raise ValueError(f"No CSV found inside ZIP: {path}")
+            with archive.open(names[0]) as handle:
+                reader = csv.DictReader(
+                    line.decode("utf-8", errors="replace") for line in handle
+                )
+                return list(reader)
+
+    with path.open(newline="", encoding="utf-8", errors="replace") as handle:
+        return list(csv.DictReader(handle))
+
+
+def summarize_oi_change(oi_path: Path | None, ticker: str) -> dict[str, object] | None:
+    if oi_path is None:
+        return None
+
+    rows = load_csv_from_path(oi_path)
+    symbol_rows = [
+        row for row in rows if str(row.get("underlying_symbol", "")).strip().upper() == ticker.upper()
+    ]
+    if not symbol_rows:
+        return None
+
+    records: list[dict[str, object]] = []
+    opening_contracts = 0.0
+    closing_contracts = 0.0
+    bullish_open = 0.0
+    bearish_open = 0.0
+    neutral_open = 0.0
+    bullish_close = 0.0
+    bearish_close = 0.0
+    neutral_close = 0.0
+
+    for row in symbol_rows:
+        last_oi = float(row.get("last_oi") or 0.0)
+        curr_oi = float(row.get("curr_oi") or 0.0)
+        volume = float(row.get("volume") or 0.0)
+        prev_bid = float(row.get("prev_bid_volume") or 0.0)
+        prev_ask = float(row.get("prev_ask_volume") or 0.0)
+        diff = curr_oi - last_oi
+
+        if prev_ask > prev_bid:
+            bias = "bullish"
+        elif prev_bid > prev_ask:
+            bias = "bearish"
+        else:
+            bias = "neutral"
+
+        opening = max(diff, 0.0)
+        closing = max(-diff, 0.0)
+        opening_contracts += opening
+        closing_contracts += closing
+
+        if bias == "bullish":
+            bullish_open += opening
+            bullish_close += closing
+        elif bias == "bearish":
+            bearish_open += opening
+            bearish_close += closing
+        else:
+            neutral_open += opening
+            neutral_close += closing
+
+        records.append(
+            {
+                "option_symbol": row.get("option_symbol", ""),
+                "strike": float(row.get("strike") or 0.0),
+                "dte": int(float(row.get("dte") or 0.0)),
+                "volume": volume,
+                "prev_ask_volume": prev_ask,
+                "prev_bid_volume": prev_bid,
+                "opened": opening,
+                "closed": closing,
+                "net_change": diff,
+                "bias": bias,
+            }
+        )
+
+    top_open = sorted(records, key=lambda item: float(item["opened"]), reverse=True)[:5]
+    top_close = sorted(records, key=lambda item: float(item["closed"]), reverse=True)[:5]
+
+    return {
+        "rows": len(records),
+        "opening_contracts": opening_contracts,
+        "closing_contracts": closing_contracts,
+        "net_contracts": opening_contracts - closing_contracts,
+        "bullish_open": bullish_open,
+        "bearish_open": bearish_open,
+        "neutral_open": neutral_open,
+        "bullish_close": bullish_close,
+        "bearish_close": bearish_close,
+        "neutral_close": neutral_close,
+        "top_open": top_open,
+        "top_close": top_close,
+    }
+
+
+def render_oi_rows(rows: list[dict[str, object]], mode: str) -> str:
+    if not rows:
+        return '<div class="oi-empty">Sem contratos relevantes.</div>'
+
+    label = "Abertos" if mode == "open" else "Fechados"
+    cells = []
+    for row in rows:
+        amount = float(row["opened"] if mode == "open" else row["closed"])
+        if amount <= 0:
+            continue
+        bias = str(row["bias"])
+        bias_class = {
+            "bullish": "bull",
+            "bearish": "bear",
+        }.get(bias, "neutral")
+        cells.append(
+            f"""
+            <div class="oi-row">
+              <div class="oi-contract">{row["option_symbol"]}</div>
+              <div class="oi-meta">{label}: {amount:,.0f} · Bias: <span class="{bias_class}">{bias}</span></div>
+            </div>
+            """
+        )
+    return "".join(cells) if cells else '<div class="oi-empty">Sem contratos relevantes.</div>'
+
+
+def generate_html(
+    ticker: str, data: dict[str, float | int | str], oi_summary: dict[str, object] | None
+) -> str:
     imbalance = float(data["imbalance"])
     pct_bull = float(data["pct_bullish"])
     pct_bear = float(data["pct_bearish"])
@@ -129,7 +262,53 @@ def generate_html(ticker: str, data: dict[str, float | int | str]) -> str:
         "donut": [pct_bull, pct_bear],
         "columnsGreen": [float(data["calls_ask_green"]), float(data["puts_bid_green"])],
         "columnsRed": [float(data["calls_bid_red"]), float(data["puts_ask_red"])],
+        "oiOpen": [
+            float(oi_summary["bullish_open"]) if oi_summary else 0.0,
+            float(oi_summary["bearish_open"]) if oi_summary else 0.0,
+            float(oi_summary["neutral_open"]) if oi_summary else 0.0,
+        ],
+        "oiClose": [
+            float(oi_summary["bullish_close"]) if oi_summary else 0.0,
+            float(oi_summary["bearish_close"]) if oi_summary else 0.0,
+            float(oi_summary["neutral_close"]) if oi_summary else 0.0,
+        ],
     }
+
+    oi_panel = ""
+    if oi_summary:
+        net_contracts = float(oi_summary["net_contracts"])
+        net_class = "bull" if net_contracts >= 0 else "bear"
+        net_sign = "+" if net_contracts >= 0 else ""
+        oi_panel = f"""
+    <section class="panel">
+      <div class="panel-head">
+        <div class="small">OI-CHANGE | posições abertas x fechadas</div>
+        <div class="small">Contratos monitorados: {int(oi_summary["rows"]):,}</div>
+      </div>
+      <section class="grid oi-grid">
+        <div class="kpi"><div class="k">Aberturas</div><div class="v">{float(oi_summary["opening_contracts"]):,.0f}</div></div>
+        <div class="kpi"><div class="k">Fechamentos</div><div class="v">{float(oi_summary["closing_contracts"]):,.0f}</div></div>
+        <div class="kpi"><div class="k">Saldo OI</div><div class="v {net_class}">{net_sign}{net_contracts:,.0f}</div></div>
+        <div class="kpi"><div class="k">Bull vs Bear Open</div><div class="v"><span class="bull">{float(oi_summary["bullish_open"]):,.0f}</span> / <span class="bear">{float(oi_summary["bearish_open"]):,.0f}</span></div></div>
+      </section>
+      <div class="chart-grid oi-chart-grid">
+        <div>
+          <div class="small">Abertura/fechamento por bias</div>
+          <div class="chart-wrap"><canvas id="oiChart"></canvas></div>
+        </div>
+        <div class="oi-lists">
+          <div>
+            <div class="small">Top aberturas</div>
+            <div class="oi-list">{render_oi_rows(oi_summary["top_open"], "open")}</div>
+          </div>
+          <div>
+            <div class="small">Top fechamentos</div>
+            <div class="oi-list">{render_oi_rows(oi_summary["top_close"], "close")}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+"""
 
     return f"""<!doctype html>
 <html lang="pt-BR">
@@ -151,6 +330,7 @@ def generate_html(ticker: str, data: dict[str, float | int | str]) -> str:
       --bull: #1f9e78;
       --bear: #d05e34;
       --accent: #d8c37a;
+      --neutral: #93a29a;
     }}
     * {{ box-sizing: border-box; }}
     body {{
@@ -239,11 +419,23 @@ def generate_html(ticker: str, data: dict[str, float | int | str]) -> str:
       border-radius: 10px;
       padding: 14px;
     }}
+    .panel-head {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }}
     .chart-grid {{
       display: grid;
       grid-template-columns: 1.1fr 1fr;
       gap: 12px;
       align-items: stretch;
+    }}
+    .oi-chart-grid {{
+      grid-template-columns: 1fr 1fr;
+      margin-top: 12px;
     }}
     .chart-wrap {{
       height: 260px;
@@ -253,11 +445,41 @@ def generate_html(ticker: str, data: dict[str, float | int | str]) -> str:
       color: var(--muted);
       font-size: 11px;
     }}
+    .bull {{ color: var(--bull); }}
+    .bear {{ color: var(--bear); }}
+    .neutral {{ color: var(--neutral); }}
+    .oi-lists {{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }}
+    .oi-list {{
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
+    }}
+    .oi-row {{
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: rgba(255,255,255,.02);
+    }}
+    .oi-contract {{
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12px;
+      color: var(--text);
+    }}
+    .oi-meta, .oi-empty {{
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }}
     @media (max-width: 860px) {{
       .grid {{
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }}
-      .chart-grid {{
+      .chart-grid,
+      .oi-chart-grid {{
         grid-template-columns: 1fr;
       }}
       .chart-wrap {{
@@ -294,6 +516,7 @@ def generate_html(ticker: str, data: dict[str, float | int | str]) -> str:
         <div class="chart-wrap"><canvas id="structureChart"></canvas></div>
       </div>
     </section>
+{oi_panel}
   </main>
 
   <script>
@@ -336,7 +559,8 @@ def generate_html(ticker: str, data: dict[str, float | int | str]) -> str:
           data: payload.columnsRed,
           backgroundColor: ["#d05e34", "#d05e34"],
           borderColor: ["#8f3f23", "#8f3f23"],
-          borderWidth: 1
+          borderWidth: 1,
+          stack: "flow"
         }}]
       }},
       options: {{
@@ -349,6 +573,36 @@ def generate_html(ticker: str, data: dict[str, float | int | str]) -> str:
         }}
       }}
     }});
+
+    if (document.getElementById("oiChart")) {{
+      new Chart(document.getElementById("oiChart"), {{
+        type: "bar",
+        data: {{
+          labels: ["Bullish", "Bearish", "Neutral"],
+          datasets: [{{
+            label: "Aberturas",
+            data: payload.oiOpen,
+            backgroundColor: ["#1f9e78", "#d05e34", "#93a29a"],
+            borderWidth: 0
+          }},
+          {{
+            label: "Fechamentos",
+            data: payload.oiClose,
+            backgroundColor: ["#146e54", "#8f3f23", "#55635c"],
+            borderWidth: 0
+          }}]
+        }},
+        options: {{
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {{ legend: {{ labels: {{ color: "#dce4df" }} }} }},
+          scales: {{
+            x: {{ ticks: {{ color: "#dce4df" }}, grid: {{ color: "rgba(255,255,255,.06)" }} }},
+            y: {{ ticks: {{ color: "#dce4df" }}, grid: {{ color: "rgba(255,255,255,.06)" }} }}
+          }}
+        }}
+      }});
+    }}
   </script>
 </body>
 </html>"""
@@ -361,8 +615,13 @@ def main() -> int:
     if missing:
         raise FileNotFoundError(f"Flow file(s) not found: {missing}")
 
+    oi_path = Path(args.oi_change_file) if args.oi_change_file else None
+    if oi_path and not oi_path.exists():
+        raise FileNotFoundError(f"OI change file not found: {oi_path}")
+
     data = calculate_from_flow(flow_paths)
-    html = generate_html(args.ticker, data)
+    oi_summary = summarize_oi_change(oi_path, args.ticker)
+    html = generate_html(args.ticker, data, oi_summary)
 
     output_path = Path(args.output)
     output_path.write_text(html, encoding="utf-8")
@@ -373,6 +632,12 @@ def main() -> int:
     print(f"Bearish Delta Vol: {float(data['bearish_dv']):,.0f} ({float(data['pct_bearish']):.1f}%)")
     print(f"Imbalance: {sign}{float(data['imbalance']):,.0f}")
     print(f"Trades: {int(data['n_contracts']):,}")
+    if oi_summary:
+        net_contracts = float(oi_summary["net_contracts"])
+        net_sign = "+" if net_contracts >= 0 else ""
+        print(f"OI Opened: {float(oi_summary['opening_contracts']):,.0f}")
+        print(f"OI Closed: {float(oi_summary['closing_contracts']):,.0f}")
+        print(f"OI Net: {net_sign}{net_contracts:,.0f}")
     print(f"HTML generated: {output_path.resolve()}")
     return 0
 
