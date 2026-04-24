@@ -212,6 +212,36 @@ def summarize_oi_change(oi_path: Path | None, ticker: str) -> dict[str, object] 
     }
 
 
+def explain_option_symbol(option_symbol: str) -> str:
+    text = option_symbol.strip().upper()
+    if not text:
+        return ""
+
+    root_end = next((index for index, char in enumerate(text) if char.isdigit()), -1)
+    if root_end < 0:
+        return ""
+    tail = text[root_end:]
+    if len(tail) < 15:
+        return ""
+
+    yymmdd = tail[:6]
+    cp_flag = tail[6]
+    strike_digits = tail[7:15]
+
+    if not (yymmdd.isdigit() and strike_digits.isdigit()):
+        return ""
+
+    year = 2000 + int(yymmdd[:2])
+    month = int(yymmdd[2:4])
+    day = int(yymmdd[4:6])
+    if month < 1 or month > 12 or day < 1 or day > 31:
+        return ""
+
+    strike = int(strike_digits) / 1000.0
+    option_type = "Call" if cp_flag == "C" else "Put" if cp_flag == "P" else cp_flag
+    return f"{option_type} {strike:.2f} {year:04d}-{month:02d}-{day:02d}"
+
+
 def render_oi_rows(rows: list[dict[str, object]], mode: str) -> str:
     if not rows:
         return '<div class="oi-empty">Sem contratos relevantes.</div>'
@@ -222,15 +252,18 @@ def render_oi_rows(rows: list[dict[str, object]], mode: str) -> str:
         amount = float(row["opened"] if mode == "open" else row["closed"])
         if amount <= 0:
             continue
+        option_symbol = str(row["option_symbol"])
+        option_explain = explain_option_symbol(option_symbol)
         bias = str(row["bias"])
         bias_class = {
             "bullish": "bull",
             "bearish": "bear",
         }.get(bias, "neutral")
+        explain_html = f'<span class="oi-explain"> | {option_explain}</span>' if option_explain else ""
         cells.append(
             f"""
             <div class="oi-row">
-              <div class="oi-contract">{row["option_symbol"]}</div>
+              <div class="oi-contract">{option_symbol}{explain_html}</div>
               <div class="oi-meta">{label}: {amount:,.0f} · Bias: <span class="{bias_class}">{bias}</span></div>
             </div>
             """
@@ -468,6 +501,12 @@ def generate_html(
       font-family: "IBM Plex Mono", monospace;
       font-size: 12px;
       color: var(--text);
+    }}
+    .oi-explain {{
+      color: var(--muted);
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 11px;
+      font-weight: 500;
     }}
     .oi-meta, .oi-empty {{
       margin-top: 4px;
