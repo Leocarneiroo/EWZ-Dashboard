@@ -106,6 +106,7 @@
     const selector = document.getElementById("symbol");
     const frame = document.getElementById("frame");
     const defaultSymbol = "EWZ";
+    const versionTag = "2026-04-30";
 
     function pickInitialSymbol() {
       const hashSymbol = location.hash.replace("#", "").toUpperCase();
@@ -116,7 +117,9 @@
     function render(symbol) {
       if (!dashboards[symbol]) return;
       selector.value = symbol;
-      frame.src = dashboards[symbol];
+      // Bust iframe cache on each published date to avoid stale latest/*.html.
+      const sep = dashboards[symbol].includes("?") ? "&" : "?";
+      frame.src = dashboards[symbol] + sep + "v=" + encodeURIComponent(versionTag);
       if (location.hash !== "#" + symbol) {
         history.replaceState(null, "", "#" + symbol);
       }

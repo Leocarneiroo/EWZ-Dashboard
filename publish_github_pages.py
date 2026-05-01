@@ -158,6 +158,7 @@ def build_selector_index(symbol_to_path: dict[str, str], default_symbol: str, da
     const selector = document.getElementById("symbol");
     const frame = document.getElementById("frame");
     const defaultSymbol = "{default_symbol}";
+    const versionTag = {json.dumps(date_label, ensure_ascii=False)};
 
     function pickInitialSymbol() {{
       const hashSymbol = location.hash.replace("#", "").toUpperCase();
@@ -168,7 +169,9 @@ def build_selector_index(symbol_to_path: dict[str, str], default_symbol: str, da
     function render(symbol) {{
       if (!dashboards[symbol]) return;
       selector.value = symbol;
-      frame.src = dashboards[symbol];
+      // Bust iframe cache on each published date to avoid stale latest/*.html.
+      const sep = dashboards[symbol].includes("?") ? "&" : "?";
+      frame.src = dashboards[symbol] + sep + "v=" + encodeURIComponent(versionTag);
       if (location.hash !== "#" + symbol) {{
         history.replaceState(null, "", "#" + symbol);
       }}
