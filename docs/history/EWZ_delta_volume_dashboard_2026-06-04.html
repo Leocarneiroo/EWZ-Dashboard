@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SPY Delta Volume Dashboard</title>
+  <title>EWZ Delta Volume Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -67,7 +67,7 @@
     .imbalance {
       font-size: clamp(32px, 7vw, 58px);
       font-weight: 700;
-      color: #1f9e78;
+      color: #d05e34;
       line-height: 1;
     }
     .sub {
@@ -75,7 +75,7 @@
       font-size: 13px;
     }
     .status {
-      color: #1f9e78;
+      color: #d05e34;
       font-weight: 700;
     }
     .grid {
@@ -206,18 +206,18 @@
   <main class="layout">
     <section class="hero">
       <div class="hero-top">
-        <div class="ticker">SPY Delta Volume</div>
-        <div class="stamp">07/06/2026</div>
+        <div class="ticker">EWZ Delta Volume</div>
+        <div class="stamp">05/06/2026</div>
       </div>
-      <div class="imbalance">+5,196,715</div>
-      <div class="sub">Order Flow Sentiment: <span class="status">50.5% Bullish</span> · Sem MID/NO_SIDE</div>
+      <div class="imbalance">-5,031</div>
+      <div class="sub">Order Flow Sentiment: <span class="status">49.7% Bearish</span> · Sem MID/NO_SIDE</div>
     </section>
 
     <section class="grid">
-      <div class="kpi"><div class="k">Bullish Delta Vol</div><div class="v" style="color:var(--bull)">257,485,385</div></div>
-      <div class="kpi"><div class="k">Bearish Delta Vol</div><div class="v" style="color:var(--bear)">252,288,670</div></div>
-      <div class="kpi"><div class="k">Trades</div><div class="v">1,820,757</div></div>
-      <div class="kpi"><div class="k">Premium Total</div><div class="v">3,945,452,548</div></div>
+      <div class="kpi"><div class="k">Bullish Delta Vol</div><div class="v" style="color:var(--bull)">479,058</div></div>
+      <div class="kpi"><div class="k">Bearish Delta Vol</div><div class="v" style="color:var(--bear)">484,089</div></div>
+      <div class="kpi"><div class="k">Trades</div><div class="v">1,739</div></div>
+      <div class="kpi"><div class="k">Premium Total</div><div class="v">3,120,409</div></div>
     </section>
 
     <section class="panel chart-grid">
@@ -234,13 +234,13 @@
     <section class="panel">
       <div class="panel-head">
         <div class="small">OI-CHANGE | posições abertas x fechadas</div>
-        <div class="small">Contratos monitorados: 4,838</div>
+        <div class="small">Contratos monitorados: 296</div>
       </div>
       <section class="grid oi-grid">
-        <div class="kpi"><div class="k">Aberturas</div><div class="v">636,706</div></div>
-        <div class="kpi"><div class="k">Fechamentos</div><div class="v">89,352</div></div>
-        <div class="kpi"><div class="k">Saldo OI</div><div class="v bull">+547,354</div></div>
-        <div class="kpi"><div class="k">Bull vs Bear Open</div><div class="v"><span class="bull">334,673</span> / <span class="bear">301,276</span></div></div>
+        <div class="kpi"><div class="k">Aberturas</div><div class="v">98,674</div></div>
+        <div class="kpi"><div class="k">Fechamentos</div><div class="v">52,448</div></div>
+        <div class="kpi"><div class="k">Saldo OI</div><div class="v bull">+46,226</div></div>
+        <div class="kpi"><div class="k">Bull vs Bear Open</div><div class="v"><span class="bull">16,948</span> / <span class="bear">81,334</span></div></div>
       </section>
       <div class="chart-grid oi-chart-grid">
         <div>
@@ -252,28 +252,28 @@
             <div class="small">Top aberturas</div>
             <div class="oi-list">
             <div class="oi-row">
-              <div class="oi-contract">SPY260717P00735000<span class="oi-explain"> | Put 735.00 2026-07-17</span></div>
-              <div class="oi-meta">Abertos: 13,438 · Bias: <span class="bull">bullish</span></div>
+              <div class="oi-contract">EWZ261218C00045000<span class="oi-explain"> | Call 45.00 2026-12-18</span></div>
+              <div class="oi-meta">Abertos: 48,324 · Bias: <span class="bear">bearish</span></div>
             </div>
             
             <div class="oi-row">
-              <div class="oi-contract">SPY260717P00718000<span class="oi-explain"> | Put 718.00 2026-07-17</span></div>
-              <div class="oi-meta">Abertos: 11,689 · Bias: <span class="bull">bullish</span></div>
+              <div class="oi-contract">EWZ260717C00037000<span class="oi-explain"> | Call 37.00 2026-07-17</span></div>
+              <div class="oi-meta">Abertos: 5,221 · Bias: <span class="bull">bullish</span></div>
             </div>
             
             <div class="oi-row">
-              <div class="oi-contract">SPY260605P00717000<span class="oi-explain"> | Put 717.00 2026-06-05</span></div>
-              <div class="oi-meta">Abertos: 10,215 · Bias: <span class="bear">bearish</span></div>
+              <div class="oi-contract">EWZ260618C00035000<span class="oi-explain"> | Call 35.00 2026-06-18</span></div>
+              <div class="oi-meta">Abertos: 3,908 · Bias: <span class="bear">bearish</span></div>
             </div>
             
             <div class="oi-row">
-              <div class="oi-contract">SPY260605P00751000<span class="oi-explain"> | Put 751.00 2026-06-05</span></div>
-              <div class="oi-meta">Abertos: 10,162 · Bias: <span class="bull">bullish</span></div>
+              <div class="oi-contract">EWZ280121P00035000<span class="oi-explain"> | Put 35.00 2028-01-21</span></div>
+              <div class="oi-meta">Abertos: 3,015 · Bias: <span class="bull">bullish</span></div>
             </div>
             
             <div class="oi-row">
-              <div class="oi-contract">SPY260605P00690000<span class="oi-explain"> | Put 690.00 2026-06-05</span></div>
-              <div class="oi-meta">Abertos: 10,112 · Bias: <span class="bull">bullish</span></div>
+              <div class="oi-contract">EWZ260717C00040000<span class="oi-explain"> | Call 40.00 2026-07-17</span></div>
+              <div class="oi-meta">Abertos: 2,972 · Bias: <span class="bear">bearish</span></div>
             </div>
             </div>
           </div>
@@ -281,28 +281,28 @@
             <div class="small">Top fechamentos</div>
             <div class="oi-list">
             <div class="oi-row">
-              <div class="oi-contract">SPY260717P00720000<span class="oi-explain"> | Put 720.00 2026-07-17</span></div>
-              <div class="oi-meta">Fechados: 4,518 · Bias: <span class="bear">bearish</span></div>
+              <div class="oi-contract">EWZ261218C00040000<span class="oi-explain"> | Call 40.00 2026-12-18</span></div>
+              <div class="oi-meta">Fechados: 45,525 · Bias: <span class="bull">bullish</span></div>
             </div>
             
             <div class="oi-row">
-              <div class="oi-contract">SPY260605P00753000<span class="oi-explain"> | Put 753.00 2026-06-05</span></div>
-              <div class="oi-meta">Fechados: 3,074 · Bias: <span class="bear">bearish</span></div>
+              <div class="oi-contract">EWZ260717P00035000<span class="oi-explain"> | Put 35.00 2026-07-17</span></div>
+              <div class="oi-meta">Fechados: 1,366 · Bias: <span class="bear">bearish</span></div>
             </div>
             
             <div class="oi-row">
-              <div class="oi-contract">SPY260618P00640000<span class="oi-explain"> | Put 640.00 2026-06-18</span></div>
-              <div class="oi-meta">Fechados: 2,460 · Bias: <span class="bear">bearish</span></div>
+              <div class="oi-contract">EWZ260618P00034000<span class="oi-explain"> | Put 34.00 2026-06-18</span></div>
+              <div class="oi-meta">Fechados: 1,156 · Bias: <span class="bull">bullish</span></div>
             </div>
             
             <div class="oi-row">
-              <div class="oi-contract">SPY260618P00670000<span class="oi-explain"> | Put 670.00 2026-06-18</span></div>
-              <div class="oi-meta">Fechados: 2,342 · Bias: <span class="bear">bearish</span></div>
+              <div class="oi-contract">EWZ261218C00035000<span class="oi-explain"> | Call 35.00 2026-12-18</span></div>
+              <div class="oi-meta">Fechados: 744 · Bias: <span class="bull">bullish</span></div>
             </div>
             
             <div class="oi-row">
-              <div class="oi-contract">SPY260605C00770000<span class="oi-explain"> | Call 770.00 2026-06-05</span></div>
-              <div class="oi-meta">Fechados: 2,250 · Bias: <span class="bear">bearish</span></div>
+              <div class="oi-contract">EWZ260821C00036000<span class="oi-explain"> | Call 36.00 2026-08-21</span></div>
+              <div class="oi-meta">Fechados: 672 · Bias: <span class="bear">bearish</span></div>
             </div>
             </div>
           </div>
@@ -314,13 +314,13 @@
     <section class="panel">
       <div class="panel-head">
         <div class="small">DP-EOD | dark pool separado do BOT</div>
-        <div class="small">Prints monitorados: 25,995</div>
+        <div class="small">Prints monitorados: 87</div>
       </div>
       <section class="grid">
-        <div class="kpi"><div class="k">DP Premium</div><div class="v">20,871,902,506</div></div>
-        <div class="kpi"><div class="k">DP Size</div><div class="v">28,009,931</div></div>
-        <div class="kpi"><div class="k">DP Avg Price</div><div class="v">743.21</div></div>
-        <div class="kpi"><div class="k">Inside NBBO</div><div class="v">21,613</div></div>
+        <div class="kpi"><div class="k">DP Premium</div><div class="v">148,642,281</div></div>
+        <div class="kpi"><div class="k">DP Size</div><div class="v">4,274,371</div></div>
+        <div class="kpi"><div class="k">DP Avg Price</div><div class="v">34.77</div></div>
+        <div class="kpi"><div class="k">Inside NBBO</div><div class="v">84</div></div>
       </section>
       <div class="compare-grid">
         <div class="compare-box">
@@ -333,37 +333,37 @@
         </div>
       </div>
       <section class="grid compare-kpis">
-        <div class="kpi"><div class="k">BOT Trades</div><div class="v">1,820,757</div></div>
-        <div class="kpi"><div class="k">DP Prints</div><div class="v">25,995</div></div>
-        <div class="kpi"><div class="k">BOT Premium</div><div class="v">3,945,452,548</div></div>
-        <div class="kpi"><div class="k">BOT/DP Premium</div><div class="v">0.19x</div></div>
+        <div class="kpi"><div class="k">BOT Trades</div><div class="v">1,739</div></div>
+        <div class="kpi"><div class="k">DP Prints</div><div class="v">87</div></div>
+        <div class="kpi"><div class="k">BOT Premium</div><div class="v">3,120,409</div></div>
+        <div class="kpi"><div class="k">BOT/DP Premium</div><div class="v">0.02x</div></div>
       </section>
       <div style="margin-top:12px">
         <div class="small">Top prints DP</div>
         <div class="oi-list">
             <div class="oi-row">
-              <div class="oi-contract">2026-06-05 21:58:52.744+00</div>
-              <div class="oi-meta">Price: 737.55 · Size: 1,443,314 · Premium: 1,064,516,241 · NBBO 735.02/735.48</div>
+              <div class="oi-contract">2026-06-04 20:45:58.807+00</div>
+              <div class="oi-meta">Price: 34.78 · Size: 2,000,000 · Premium: 69,560,000 · NBBO 34.62/35.04</div>
             </div>
             
             <div class="oi-row">
-              <div class="oi-contract">2026-06-05 20:16:30.881+00</div>
-              <div class="oi-meta">Price: 737.03 · Size: 1,000,000 · Premium: 737,033,900 · NBBO 734.21/734.23</div>
+              <div class="oi-contract">2026-06-04 20:00:29.186+00</div>
+              <div class="oi-meta">Price: 34.78 · Size: 300,000 · Premium: 10,434,000 · NBBO 34.62/35.04</div>
             </div>
             
             <div class="oi-row">
-              <div class="oi-contract">2026-06-05 20:16:30.987+00</div>
-              <div class="oi-meta">Price: 737.01 · Size: 1,000,000 · Premium: 737,013,900 · NBBO 734.22/734.23</div>
+              <div class="oi-contract">2026-06-04 14:26:54.413+00</div>
+              <div class="oi-meta">Price: 34.80 · Size: 295,926 · Premium: 10,298,225 · NBBO 34.79/34.80</div>
             </div>
             
             <div class="oi-row">
-              <div class="oi-contract">2026-06-05 20:16:30.938+00</div>
-              <div class="oi-meta">Price: 737.03 · Size: 500,000 · Premium: 368,516,950 · NBBO 734.22/734.23</div>
+              <div class="oi-contract">2026-06-04 18:04:24.59+00</div>
+              <div class="oi-meta">Price: 34.74 · Size: 259,292 · Premium: 9,007,545 · NBBO 34.73/34.74</div>
             </div>
             
             <div class="oi-row">
-              <div class="oi-contract">2026-06-05 20:16:31.038+00</div>
-              <div class="oi-meta">Price: 737.03 · Size: 500,000 · Premium: 368,516,950 · NBBO 734.21/734.23</div>
+              <div class="oi-contract">2026-06-04 20:45:53.363+00</div>
+              <div class="oi-meta">Price: 34.78 · Size: 250,000 · Premium: 8,695,000 · NBBO 34.62/35.04</div>
             </div>
             </div>
       </div>
@@ -372,7 +372,7 @@
   </main>
 
   <script>
-    const payload = {"donut": [50.5, 49.5], "columnsGreen": [104154104.25100112, 153331280.94976988], "columnsRed": [107083176.84952334, 145205493.40766698], "oiOpen": [334673.0, 301276.0, 757.0], "oiClose": [29089.0, 59750.0, 513.0]};
+    const payload = {"donut": [49.7, 50.3], "columnsGreen": [259412.6717541187, 219645.7440338734], "columnsRed": [210379.90408827076, 273709.04025958246], "oiOpen": [16948.0, 81334.0, 392.0], "oiClose": [49311.0, 3087.0, 50.0]};
     new Chart(document.getElementById("sentimentChart"), {
       type: "doughnut",
       data: {
