@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EWZ Delta Volume Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #090b0c;
+      --bg-2: #111719;
+      --line: #253035;
+      --text: #e6ece8;
+      --muted: #8a9890;
+      --bull: #1f9e78;
+      --bear: #d05e34;
+      --accent: #d8c37a;
+      --neutral: #93a29a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 0% 0%, #1d2a2f 0%, transparent 55%),
+        radial-gradient(900px 400px at 100% 100%, #2b1c1a 0%, transparent 58%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    .layout {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+      display: grid;
+      gap: 16px;
+    }
+    .hero {
+      display: grid;
+      gap: 8px;
+      border: 1px solid var(--line);
+      background: linear-gradient(160deg, rgba(17,23,25,.92), rgba(9,11,12,.95));
+      padding: 18px;
+      border-radius: 10px;
+    }
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .ticker {
+      font-size: 28px;
+      line-height: 1;
+      letter-spacing: 0;
+      font-weight: 700;
+    }
+    .stamp {
+      font-family: "IBM Plex Mono", monospace;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .imbalance {
+      font-size: clamp(32px, 7vw, 58px);
+      font-weight: 700;
+      color: #1f9e78;
+      line-height: 1;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .status {
+      color: #1f9e78;
+      font-weight: 700;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .kpi {
+      border: 1px solid var(--line);
+      background: var(--bg-2);
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 84px;
+    }
+    .k {
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    .v {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      background: var(--bg-2);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 12px;
+      align-items: stretch;
+    }
+    .oi-chart-grid {
+      grid-template-columns: 1fr 1fr;
+      margin-top: 12px;
+    }
+    .chart-wrap {
+      height: 260px;
+    }
+    .small {
+      font-family: "IBM Plex Mono", monospace;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .bull { color: var(--bull); }
+    .bear { color: var(--bear); }
+    .neutral { color: var(--neutral); }
+    .oi-lists {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .oi-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .oi-row {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: rgba(255,255,255,.02);
+    }
+    .oi-contract {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12px;
+      color: var(--text);
+    }
+    .oi-explain {
+      color: var(--muted);
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .oi-meta, .oi-empty {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .compare-box {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      background: rgba(255,255,255,.02);
+      display: grid;
+      gap: 8px;
+    }
+    .compare-item {
+      font-size: 13px;
+      line-height: 1.35;
+      color: var(--text);
+    }
+    @media (max-width: 860px) {
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .chart-grid,
+      .oi-chart-grid,
+      .compare-grid {
+        grid-template-columns: 1fr;
+      }
+      .chart-wrap {
+        height: 230px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <section class="hero">
+      <div class="hero-top">
+        <div class="ticker">EWZ Delta Volume</div>
+        <div class="stamp">12/10/2026</div>
+      </div>
+      <div class="imbalance">+5,535,690</div>
+      <div class="sub">Order Flow Sentiment: <span class="status">62.4% Bullish</span> · Sem MID/NO_SIDE</div>
+    </section>
+
+    <section class="grid">
+      <div class="kpi"><div class="k">Bullish Delta Vol</div><div class="v" style="color:var(--bull)">13,963,291</div></div>
+      <div class="kpi"><div class="k">Bearish Delta Vol</div><div class="v" style="color:var(--bear)">8,427,600</div></div>
+      <div class="kpi"><div class="k">Trades</div><div class="v">12,301</div></div>
+      <div class="kpi"><div class="k">Premium Total</div><div class="v">81,201,542</div></div>
+    </section>
+
+    <section class="panel chart-grid">
+      <div>
+        <div class="small">Bullish vs Bearish (%)</div>
+        <div class="chart-wrap"><canvas id="sentimentChart"></canvas></div>
+      </div>
+      <div>
+        <div class="small">CALLS/PUTS bi-color flow</div>
+        <div class="chart-wrap"><canvas id="structureChart"></canvas></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div class="small">OI-CHANGE | posições abertas x fechadas</div>
+        <div class="small">Contratos monitorados: 381</div>
+      </div>
+      <section class="grid oi-grid">
+        <div class="kpi"><div class="k">Aberturas</div><div class="v">228,253</div></div>
+        <div class="kpi"><div class="k">Fechamentos</div><div class="v">120,159</div></div>
+        <div class="kpi"><div class="k">Saldo OI</div><div class="v bull">+108,094</div></div>
+        <div class="kpi"><div class="k">Bull vs Bear Open</div><div class="v"><span class="bull">67,048</span> / <span class="bear">151,858</span></div></div>
+      </section>
+      <div class="chart-grid oi-chart-grid">
+        <div>
+          <div class="small">Abertura/fechamento por bias</div>
+          <div class="chart-wrap"><canvas id="oiChart"></canvas></div>
+        </div>
+        <div class="oi-lists">
+          <div>
+            <div class="small">Top aberturas</div>
+            <div class="oi-list">
+            <div class="oi-row">
+              <div class="oi-contract">EWZ261218C00055000<span class="oi-explain"> | Call 55.00 2026-12-18</span></div>
+              <div class="oi-meta">Abertos: 29,965 · Bias: <span class="bear">bearish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">EWZ270115C00049000<span class="oi-explain"> | Call 49.00 2027-01-15</span></div>
+              <div class="oi-meta">Abertos: 18,950 · Bias: <span class="bull">bullish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">EWZ270115C00051000<span class="oi-explain"> | Call 51.00 2027-01-15</span></div>
+              <div class="oi-meta">Abertos: 17,688 · Bias: <span class="bear">bearish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">EWZ270716C00045000<span class="oi-explain"> | Call 45.00 2027-07-16</span></div>
+              <div class="oi-meta">Abertos: 15,001 · Bias: <span class="bear">bearish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">EWZ270716P00038000<span class="oi-explain"> | Put 38.00 2027-07-16</span></div>
+              <div class="oi-meta">Abertos: 14,977 · Bias: <span class="bear">bearish</span></div>
+            </div>
+            </div>
+          </div>
+          <div>
+            <div class="small">Top fechamentos</div>
+            <div class="oi-list">
+            <div class="oi-row">
+              <div class="oi-contract">EWZ261120C00041000<span class="oi-explain"> | Call 41.00 2026-11-20</span></div>
+              <div class="oi-meta">Fechados: 28,985 · Bias: <span class="bear">bearish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">EWZ261120C00043000<span class="oi-explain"> | Call 43.00 2026-11-20</span></div>
+              <div class="oi-meta">Fechados: 18,999 · Bias: <span class="bear">bearish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">EWZ261016C00042000<span class="oi-explain"> | Call 42.00 2026-10-16</span></div>
+              <div class="oi-meta">Fechados: 10,501 · Bias: <span class="bull">bullish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">EWZ261120C00042000<span class="oi-explain"> | Call 42.00 2026-11-20</span></div>
+              <div class="oi-meta">Fechados: 6,135 · Bias: <span class="bear">bearish</span></div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">EWZ261009C00043000<span class="oi-explain"> | Call 43.00 2026-10-09</span></div>
+              <div class="oi-meta">Fechados: 5,586 · Bias: <span class="bear">bearish</span></div>
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="panel">
+      <div class="panel-head">
+        <div class="small">DP-EOD | dark pool separado do BOT</div>
+        <div class="small">Prints monitorados: 805</div>
+      </div>
+      <section class="grid">
+        <div class="kpi"><div class="k">DP Premium</div><div class="v">549,399,115</div></div>
+        <div class="kpi"><div class="k">DP Size</div><div class="v">12,641,360</div></div>
+        <div class="kpi"><div class="k">DP Avg Price</div><div class="v">43.44</div></div>
+        <div class="kpi"><div class="k">Inside NBBO</div><div class="v">752</div></div>
+      </section>
+      <div class="compare-grid">
+        <div class="compare-box">
+          <div class="small">BOT x DP | semelhancas</div>
+          <div class="compare-item bull">Mesmo ativo e mesma data da sessao.</div><div class="compare-item bull">Ambos capturam atividade grande/institucional.</div><div class="compare-item bull">Os dois ajudam a confirmar onde houve concentracao de capital.</div>
+        </div>
+        <div class="compare-box">
+          <div class="small">BOT x DP | diferencas</div>
+          <div class="compare-item bear">BOT = fluxo de opcoes; DP = blocos de acoes em dark pool.</div><div class="compare-item bear">BOT traz lado/estrutura de calls e puts; DP nao traz cadeia de opcoes.</div><div class="compare-item bear">Premium BOT e premium DP nao sao metricas identicas, entao a leitura deve ser paralela e nao somada.</div>
+        </div>
+      </div>
+      <section class="grid compare-kpis">
+        <div class="kpi"><div class="k">BOT Trades</div><div class="v">12,301</div></div>
+        <div class="kpi"><div class="k">DP Prints</div><div class="v">805</div></div>
+        <div class="kpi"><div class="k">BOT Premium</div><div class="v">81,201,542</div></div>
+        <div class="kpi"><div class="k">BOT/DP Premium</div><div class="v">0.15x</div></div>
+      </section>
+      <div style="margin-top:12px">
+        <div class="small">Top prints DP</div>
+        <div class="oi-list">
+            <div class="oi-row">
+              <div class="oi-contract">2026-10-09 20:19:16.193+00</div>
+              <div class="oi-meta">Price: 43.48 · Size: 4,570,952 · Premium: 198,726,252 · NBBO 43.43/43.52</div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">2026-10-09 18:32:12.606+00</div>
+              <div class="oi-meta">Price: 43.49 · Size: 300,000 · Premium: 13,047,000 · NBBO 43.48/43.49</div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">2026-10-09 18:28:17.1+00</div>
+              <div class="oi-meta">Price: 43.48 · Size: 300,000 · Premium: 13,044,000 · NBBO 43.47/43.48</div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">2026-10-09 20:29:17.862+00</div>
+              <div class="oi-meta">Price: 43.54 · Size: 285,938 · Premium: 12,449,741 · NBBO 43.35/43.49</div>
+            </div>
+            
+            <div class="oi-row">
+              <div class="oi-contract">2026-10-09 19:56:04.083+00</div>
+              <div class="oi-meta">Price: 43.50 · Size: 230,000 · Premium: 10,005,000 · NBBO 43.53/43.54</div>
+            </div>
+            </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const payload = {"donut": [62.4, 37.6], "columnsGreen": [12783834.384267567, 1179456.2134830384], "columnsRed": [7797415.332926719, 630185.122852654], "oiOpen": [67048.0, 151858.0, 9347.0], "oiClose": [37530.0, 76967.0, 5662.0]};
+    new Chart(document.getElementById("sentimentChart"), {
+      type: "doughnut",
+      data: {
+        labels: ["Bullish", "Bearish"],
+        datasets: [{
+          data: payload.donut,
+          backgroundColor: ["#1f9e78", "#d05e34"],
+          borderColor: ["#146e54", "#8f3f23"],
+          borderWidth: 1.5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "62%",
+        plugins: {
+          legend: { labels: { color: "#dce4df" } }
+        }
+      }
+    });
+
+    new Chart(document.getElementById("structureChart"), {
+      type: "bar",
+      data: {
+        labels: ["CALLS", "PUTS"],
+        datasets: [{
+          label: "Green side",
+          data: payload.columnsGreen,
+          backgroundColor: ["#1f9e78", "#1f9e78"],
+          borderColor: ["#146e54", "#146e54"],
+          borderWidth: 1,
+          stack: "flow"
+        },
+        {
+          label: "Red side",
+          data: payload.columnsRed,
+          backgroundColor: ["#d05e34", "#d05e34"],
+          borderColor: ["#8f3f23", "#8f3f23"],
+          borderWidth: 1,
+          stack: "flow"
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: "#dce4df" } } },
+        scales: {
+          x: { stacked: true, ticks: { color: "#dce4df" }, grid: { color: "rgba(255,255,255,.06)" } },
+          y: { stacked: true, ticks: { color: "#dce4df" }, grid: { color: "rgba(255,255,255,.06)" } }
+        }
+      }
+    });
+
+    if (document.getElementById("oiChart")) {
+      new Chart(document.getElementById("oiChart"), {
+        type: "bar",
+        data: {
+          labels: ["Bullish", "Bearish", "Neutral"],
+          datasets: [{
+            label: "Aberturas",
+            data: payload.oiOpen,
+            backgroundColor: ["#1f9e78", "#d05e34", "#93a29a"],
+            borderWidth: 0
+          },
+          {
+            label: "Fechamentos",
+            data: payload.oiClose,
+            backgroundColor: ["#146e54", "#8f3f23", "#55635c"],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: "#dce4df" } } },
+          scales: {
+            x: { ticks: { color: "#dce4df" }, grid: { color: "rgba(255,255,255,.06)" } },
+            y: { ticks: { color: "#dce4df" }, grid: { color: "rgba(255,255,255,.06)" } }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
