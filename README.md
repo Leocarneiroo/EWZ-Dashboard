@@ -1,5 +1,7 @@
 # EWZ Dashboard
 
+🌐 **Dashboard publicado:** https://leocarneiroo.github.io/EWZ-Dashboard/
+
 Guia simples para **quem nunca programou** baixar este projeto e rodar na própria máquina.
 
 ## O que este projeto faz
@@ -45,7 +47,7 @@ Se aparecer número de versão (ex.: `Python 3.x.x`), está ok.
 
 1. Instale e abra o GitHub Desktop.
 2. Clique em **File > Clone repository**.
-3. Selecione o repositório `EWZ Dashboard`.
+3. Selecione o repositório `Leocarneiroo/EWZ-Dashboard`.
 4. Escolha uma pasta no seu computador e clique em **Clone**.
 5. No final, você terá uma pasta local com todos os arquivos do projeto.
 
@@ -54,13 +56,13 @@ Se aparecer número de versão (ex.: `Python 3.x.x`), está ok.
 No terminal, rode:
 
 ```bash
-git clone <URL_DO_REPOSITORIO>
+git clone https://github.com/Leocarneiroo/EWZ-Dashboard.git
 ```
 
 Depois entre na pasta:
 
 ```bash
-cd "EWZ Dashboard"
+cd EWZ-Dashboard
 ```
 
 ## Como abrir a pasta do projeto
@@ -81,7 +83,7 @@ pwd
 pwd
 ```
 
-O caminho exibido deve terminar com `EWZ Dashboard`.
+O caminho exibido deve terminar com `EWZ-Dashboard`.
 
 ## Como preparar os arquivos do dia
 
@@ -226,15 +228,15 @@ python3 --version
 
 ### 4) Você está na pasta errada
 
-Rode `pwd` e confirme que está dentro da pasta do projeto `EWZ Dashboard`.
+Rode `pwd` e confirme que está dentro da pasta do projeto `EWZ-Dashboard`.
 
 ## Resumo ultra-rápido (cola e roda)
 
 ### Windows (PowerShell)
 
 ```powershell
-git clone <URL_DO_REPOSITORIO>
-cd "EWZ Dashboard"
+git clone https://github.com/Leocarneiroo/EWZ-Dashboard.git
+cd EWZ-Dashboard
 python ewz_runner.py --date-dir 2026-05-06
 ```
 
@@ -247,15 +249,15 @@ py ewz_runner.py --date-dir 2026-05-06
 ### macOS (Terminal)
 
 ```bash
-git clone <URL_DO_REPOSITORIO>
-cd "EWZ Dashboard"
+git clone https://github.com/Leocarneiroo/EWZ-Dashboard.git
+cd EWZ-Dashboard
 python3 ewz_runner.py --date-dir 2026-05-06
 ```
 
 ### Linux (Terminal)
 
 ```bash
-git clone <URL_DO_REPOSITORIO>
-cd "EWZ Dashboard"
+git clone https://github.com/Leocarneiroo/EWZ-Dashboard.git
+cd EWZ-Dashboard
 python3 ewz_runner.py --date-dir 2026-05-06
 ```
