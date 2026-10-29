@@ -165,9 +165,10 @@ Arquivos esperados incluem dashboards HTML como:
 
 ## Publicação no GitHub Pages
 
-Por padrão, o runner **já publica** em `docs/` no final.
+Ao terminar o processamento, o runner pergunta se deve atualizar `docs/`,
+criar o commit e fazer `git push origin main`. Enter ou `N` mantém tudo local.
 
-Se você quiser rodar sem publicar, use `--no-publish`.
+Para rodar sem perguntar, use `--no-publish`.
 
 ### Windows
 

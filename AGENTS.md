@@ -81,7 +81,7 @@ python3 ewz_runner.py --date-dir YYYY-MM-DD
 
 Flags úteis:
 - `--date-dir YYYY-MM-DD` : obrigatório se quiser data específica
-- `--no-publish` : processa mas NÃO atualiza `docs/` (use apenas se pedido)
+- `--no-publish` : processa sem perguntar nem atualizar `docs/`, GitHub ou GitHub Pages
 - `--symbols EWZ SPY` : padrão já é EWZ + SPY
 
 ### Passo 3 — Verifique saída
@@ -90,7 +90,7 @@ Esperado no terminal:
 EWZ runner completed.
 Date: YYYY-MM-DD
 ...
-Docs published in docs/.
+Docs published and pushed to GitHub.
 ```
 
 ### Passo 4 — Commit e push (se o usuário pedir para atualizar GitHub Pages)

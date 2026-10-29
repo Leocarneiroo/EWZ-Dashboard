@@ -38,6 +38,14 @@ def run(cmd: list[str], cwd: Path) -> None:
         raise RuntimeError(f"Command failed ({completed.returncode}): {' '.join(cmd)}")
 
 
+def confirm_publish() -> bool:
+    try:
+        answer = input("Atualizar GitHub Pages e fazer push para o GitHub? [s/N] ")
+    except EOFError:
+        return False
+    return answer.strip().lower() in {"s", "sim", "y", "yes"}
+
+
 def resolve_today_dir(repo_dir: Path, date_dir: Path | None) -> Path:
     if date_dir is not None:
         return date_dir.expanduser().resolve()
@@ -136,7 +144,8 @@ def main() -> int:
             cwd=repo_dir,
         )
 
-    if not args.no_publish:
+    publish_requested = not args.no_publish and confirm_publish()
+    if publish_requested:
         publish_cmd = [
             sys.executable,
             "publish_github_pages.py",
@@ -148,6 +157,19 @@ def main() -> int:
         for ticker in sorted(output_html_by_symbol.keys()):
             publish_cmd.extend(["--dashboard", f"{ticker}={output_html_by_symbol[ticker]}"])
         run(publish_cmd, cwd=repo_dir)
+        run(["git", "add", "docs/"], cwd=repo_dir)
+        run(
+            [
+                "git",
+                "commit",
+                "--only",
+                "docs/",
+                "-m",
+                f"docs: update GitHub Pages dashboards for {date_label}",
+            ],
+            cwd=repo_dir,
+        )
+        run(["git", "push", "origin", "main"], cwd=repo_dir)
 
     print("EWZ runner completed.")
     print(f"Date: {date_label}")
@@ -158,8 +180,10 @@ def main() -> int:
         print(f"{ticker} dashboard: {output_html_by_symbol[ticker]}")
     if args.no_publish:
         print("Publish skipped (--no-publish).")
+    elif not publish_requested:
+        print("Publish skipped (not confirmed).")
     else:
-        print("Docs published in docs/.")
+        print("Docs published and pushed to GitHub.")
 
     return 0
 
